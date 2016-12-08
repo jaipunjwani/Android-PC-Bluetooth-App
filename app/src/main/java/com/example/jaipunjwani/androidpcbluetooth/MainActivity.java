@@ -2,6 +2,7 @@ package com.example.jaipunjwani.androidpcbluetooth;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+//import android.util.JsonToken;
 import android.util.Log;
 import android.widget.Button;
 import android.view.View;
@@ -9,19 +10,26 @@ import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonToken;
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
 import com.pubnub.api.callbacks.PNCallback;
 import com.pubnub.api.callbacks.SubscribeCallback;
+import com.pubnub.api.enums.PNLogVerbosity;
 import com.pubnub.api.enums.PNStatusCategory;
 import com.pubnub.api.models.consumer.PNPublishResult;
 import com.pubnub.api.models.consumer.PNStatus;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 
+import org.json.JSONTokener;
 import org.w3c.dom.Text;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -33,10 +41,12 @@ public class MainActivity extends AppCompatActivity {
     EditText messagesEditText;
     EditText statusEditText;
 
-    private static final String CHANNEL = "my_channel";
-    private static final String SUBSCRIBE_KEY = "SubscribeKey";
-    private static final String PUBLISH_KEY = "PublishKey";
-    public static final String PUBNUB = "Pubnub";
+    PubNub pubNub;
+
+    private static final String CHANNEL = "my_channel_JAI_2";
+    private static final String SUBSCRIBE_KEY = "sub-c-c2b7158a-bcd2-11e6-b737-0619f8945a4f";
+    private static final String PUBLISH_KEY = "pub-c-d84f1266-0118-4890-967b-40b3372b4a6a";
+    public static  final String PUBNUB = "Pubnub";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,15 +83,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        initiatePubNubInstance();
+
+
+
     }
 
-    public void subscribe() {
+    public void initiatePubNubInstance() {
         PNConfiguration pnConfiguration = new PNConfiguration();
-        // pnConfiguration.setPublishKey(PUBLISH_KEY);
+        pnConfiguration.setLogVerbosity(PNLogVerbosity.BODY);
+        pnConfiguration.setPublishKey(PUBLISH_KEY);
         pnConfiguration.setSubscribeKey(SUBSCRIBE_KEY);
         pnConfiguration.setSecure(false);
 
-        PubNub pubNub = new PubNub(pnConfiguration);
+        pubNub = new PubNub(pnConfiguration);
         pubNub.addListener(new SubscribeCallback() {
             @Override
             public void status(PubNub pubnub, PNStatus status) {
@@ -123,7 +138,20 @@ public class MainActivity extends AppCompatActivity {
                 // Handle new message stored in message.message
                 if (message.getChannel() != null) {
                     Log.i("received", message.getMessage().asText());
-                    messagesEditText.setText("Message: " + message.getMessage().asText());
+                    JsonNode node = message.getMessage();
+
+                    String type = node.getNodeType().name();
+
+                    final String msg = message.getMessage().asText();
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleUIThread(msg);
+                        }
+                    });
+
+
                     // Message has been received on channel group stored in
                     // message.getChannel()
                 }
@@ -148,24 +176,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    public void handleUIThread(String messageText) {
+        messagesEditText.setText("Message: " + messageText);
+    }
+
+    public void subscribe() {
+
         pubNub.subscribe().channels(Arrays.asList(CHANNEL)).execute();
     }
 
     public void publish() {
-        PNConfiguration pnConfiguration = new PNConfiguration();
-        pnConfiguration.setPublishKey(PUBLISH_KEY);
-        //pnConfiguration.setSubscribeKey(SUBSCRIBE_KEY);
-        pnConfiguration.setSecure(false);
 
-        PubNub pubnub = new PubNub(pnConfiguration);
-
-
-
-
-        pubnub.publish().channel(CHANNEL)
+        pubNub.publish().channel(CHANNEL)
                 .usePOST(true)
-                .shouldStore(true)
-                .message(Arrays.asList("hello", "there"))
+                //.shouldStore(true)
+                .message("CODE@MIT")
                 .async(new PNCallback<PNPublishResult>() {
             @Override
             public void onResponse(PNPublishResult result, PNStatus status) {
@@ -184,5 +211,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
 }
