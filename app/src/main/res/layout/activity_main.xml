@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/channelTextView"
-        tools:textSize="25sp" />
+        android:textSize="@dimen/app_font_size" />
 
     <Space
         android:layout_width="wrap_content"
@@ -37,29 +37,36 @@
         android:layout_alignParentBottom="false"
         android:layout_below="@id/subscribeButton" />
 
-    <EditText
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textMultiLine"
-        android:ems="10"
-        android:id="@+id/messagesEditText"
+        android:id="@+id/messagesTextView"
         android:layout_below="@+id/publishButton"
-        android:text="Messages Received:" />
+        android:text="Messages Received:"
+        android:textSize="@dimen/app_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/statusTextView"
+        android:text="Status Messages:"
+        android:layout_below="@+id/messagesTextView"
+        android:textSize="@dimen/app_font_size" />
 
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textMultiLine"
-        android:ems="10"
-        android:id="@+id/statusEditText"
-        android:text="Status Messages:"
-        android:layout_below="@+id/messagesEditText" />
+        android:inputType="textPersonName"
+        android:id="@+id/enterMessageEditText"
+        android:hint="Enter message"
+        android:layout_below="@+id/statusTextView"
+        android:textSize="@dimen/app_font_size" />
 
     <Button
         android:text="Launch Bluetooth Activity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/launchBluetoothButton"
-        android:layout_below="@+id/statusEditText" />
+        android:layout_below="@+id/enterMessageEditText" />
 
 </RelativeLayout>

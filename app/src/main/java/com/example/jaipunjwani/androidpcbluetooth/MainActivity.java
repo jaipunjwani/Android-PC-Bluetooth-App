@@ -1,8 +1,8 @@
 package com.example.jaipunjwani.androidpcbluetooth;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-//import android.util.JsonToken;
 import android.util.Log;
 import android.widget.Button;
 import android.view.View;
@@ -10,9 +10,7 @@ import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.core.JsonToken;
 import com.pubnub.api.PNConfiguration;
 import com.pubnub.api.PubNub;
 import com.pubnub.api.callbacks.PNCallback;
@@ -24,12 +22,7 @@ import com.pubnub.api.models.consumer.PNStatus;
 import com.pubnub.api.models.consumer.pubsub.PNMessageResult;
 import com.pubnub.api.models.consumer.pubsub.PNPresenceEventResult;
 
-import org.json.JSONTokener;
-import org.w3c.dom.Text;
-
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -38,12 +31,13 @@ public class MainActivity extends AppCompatActivity {
     Button publishButton;
     Button launchBluetoothButton;
     TextView channelTextView;
-    EditText messagesEditText;
-    EditText statusEditText;
+    TextView messagesTextView;
+    TextView statusTextView;
+    EditText enterMessageEditText;
 
     PubNub pubNub;
 
-    private static final String CHANNEL = "my_channel_JAI_2";
+    private static final String CHANNEL = "Android Bluetooth App";
     private static final String SUBSCRIBE_KEY = "sub-c-c2b7158a-bcd2-11e6-b737-0619f8945a4f";
     private static final String PUBLISH_KEY = "pub-c-d84f1266-0118-4890-967b-40b3372b4a6a";
     public static  final String PUBNUB = "Pubnub";
@@ -54,8 +48,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         channelTextView = (TextView) findViewById(R.id.channelTextView);
-        messagesEditText = (EditText) findViewById(R.id.messagesEditText);
-        statusEditText = (EditText) findViewById(R.id.statusEditText);
+        messagesTextView = (TextView) findViewById(R.id.messagesTextView);
+        statusTextView = (TextView) findViewById(R.id.statusTextView);
+        enterMessageEditText = (EditText) findViewById(R.id.enterMessageEditText);
         subscribeButton = (Button) findViewById(R.id.subscribeButton);
         publishButton = (Button) findViewById(R.id.publishButton);
         launchBluetoothButton = (Button) findViewById(R.id.launchBluetoothButton);
@@ -80,6 +75,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // launch bluetooth activity to connect with nearby computer
+                enterMessageEditText.setText("bluetooth");
+                publish();
+
             }
         });
 
@@ -110,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
 
                 else if (status.getCategory() == PNStatusCategory.PNConnectedCategory) {
                     Log.i(PUBNUB, "subscribed");
-                    statusEditText.setText("Status: subscribed");
+                    statusTextView.setText("Status: subscribed");
                     // Connect event. You can do stuff like publish, and know you'll get it.
                     // Or just use the connected event to confirm you are subscribed for
                     // UI / internal notifications, etc
@@ -129,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                     // encrypt messages and on live data feed it received plain text.
                 }
                 else {
-                    statusEditText.setText("Status: " + "Subscription Error " + status.getCategory().name());
+                    statusTextView.setText("Status: " + "Subscription Error " + status.getCategory().name());
                 }
             }
 
@@ -140,14 +138,15 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("received", message.getMessage().asText());
                     JsonNode node = message.getMessage();
 
-                    String type = node.getNodeType().name();
+                    String type = node.getNodeType().name(); // TODO: use this to detect what type of message was sent
 
                     final String msg = message.getMessage().asText();
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            handleUIThread(msg);
+                            processMessage(msg);
+                            messagesTextView.setText("Message: " + msg);
                         }
                     });
 
@@ -157,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else {
                     Log.i("error", "message.getChannel == null");
-                    statusEditText.setText("Error: message channel null");
+                    statusTextView.setText("Error: message channel null");
                     // Message has been received on channel stored in
                     // message.getSubscription()
                 }
@@ -178,8 +177,18 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void handleUIThread(String messageText) {
-        messagesEditText.setText("Message: " + messageText);
+    private void processMessage(String message) {
+        if( message.equals("bluetooth")) {
+            launchBluetoothActivity();
+        } else {
+            messagesTextView.setText(message);
+        }
+
+    }
+
+    private void launchBluetoothActivity() {
+        Intent bluetoothIntent = new Intent(getApplicationContext(), BluetoothActivity.class);
+        startActivity(bluetoothIntent);
     }
 
     public void subscribe() {
@@ -192,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
         pubNub.publish().channel(CHANNEL)
                 .usePOST(true)
                 //.shouldStore(true)
-                .message("CODE@MIT")
+                .message(enterMessageEditText.getText().toString())
                 .async(new PNCallback<PNPublishResult>() {
             @Override
             public void onResponse(PNPublishResult result, PNStatus status) {
@@ -200,12 +209,12 @@ public class MainActivity extends AppCompatActivity {
                 if (!status.isError()) {
 
                     Log.i("Pubnub", "message published");
-                    statusEditText.setText("Status: Message published");
+                    statusTextView.setText("Status: Message published");
                 }
                 // Request processing failed.
                 else {
                     Log.i("Pubnub", "message not published " + status.getCategory().name());
-                    statusEditText.setText("Status: Message Failed to publish (" + status.getCategory().name() + ")");
+                    statusTextView.setText("Status: Message Failed to publish (" + status.getCategory().name() + ")");
                     //status.retry();
                 }
             }
